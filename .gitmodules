@@ -1,0 +1,6 @@
+[submodule "nvim/.config/nvim/submodules/vim-plug"]
+	path = nvim/.config/nvim/submodules/vim-plug
+	url = https://github.com/junegunn/vim-plug.git
+[submodule "nvim/.config/nvim/plugged/gruvbox"]
+	path = nvim/.config/nvim/plugged/gruvbox
+	url = https://github.com/morhetz/gruvbox.git
