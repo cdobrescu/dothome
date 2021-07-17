@@ -1,7 +1,7 @@
 # Dothome repo
 
 ## Chekout
-Checkout using `git clone --recursive <git_url> ~/.dothome` because this repo has some submodules defined:
+Checkout using `git clone --recursive https://github.com/cdobrescu/dothome.git ~/.dothome` because this repo has some submodules defined:
 - gruvbox - Neovim colorscheme
 - vim-plug - Neovim package manager
 
