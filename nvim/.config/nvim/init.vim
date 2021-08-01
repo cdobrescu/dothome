@@ -1,7 +1,10 @@
+set noshowmode
+set laststatus=2
 
 lua << EOF
 vim.g.mapleader = ' '
 vim.g.maplocalleader = '\\'
+-- vim.g.python3_host_prog = '/home/cdo/.env/bin/python3'
 
 vim.opt.cursorline     = true                     -- higlinght cursorline
 vim.opt.number         = true                     -- show line numbers
@@ -10,6 +13,9 @@ vim.opt.pumblend       = 10                       -- pseudo-transparency for pop
 vim.opt.relativenumber = true                     -- show relative numbers in gutter
 vim.opt.scrolloff      = 3                        -- start scrolling 3 lines before edge of viewport
 vim.opt.expandtab      = true                     -- always use spaces instead of tabs
+
+vim.g.hidden           = true                     -- allow buffer switching without prior saving
+vim.g.confirm          = true                     -- demand confirmation when closing unsaved buffers
 
 EOF
 
@@ -22,16 +28,17 @@ call plug#begin('~/.config/nvim/plugged')
 
 Plug 'morhetz/gruvbox'            "best color scheme
 Plug 'scrooloose/nerdtree'
-"Plug 'itchyny/lightline.vim'
 Plug 'nvim-lua/popup.nvim'
 Plug 'nvim-lua/plenary.nvim'
 Plug 'nvim-telescope/telescope.nvim'
 
 Plug 'neovim/nvim-lspconfig'
-Plug 'nvim-lua/completion-nvim'
+Plug 'kabouzeid/nvim-lspinstall'
+"Plug 'nvim-lua/completion-nvim'
 Plug 'glepnir/lspsaga.nvim'
 
-Plug 'nvim-treesitter/nvim-treesitter'
+Plug 'nvim-treesitter/nvim-treesitter', { 'branch': '0.5-compat', 'do': ':TSUpdate'}
+Plug 'nvim-treesitter/nvim-treesitter-textobjects'
 Plug 'hoob3rt/lualine.nvim'
 " If you want to have icons in your statusline choose one of these
 Plug 'kyazdani42/nvim-web-devicons'
@@ -98,86 +105,21 @@ lualine.setup {
 }
 EOF
 
-" LightLine settings {{{
-set noshowmode
-set laststatus=2
-let g:lightline = {
-      \ 'colorscheme': 'default',
-      \ 'active': {
-      \   'left': [ [ 'mode', 'paste' ], [ 'fugitive', 'filename' ] ]
-      \ },
-      \ 'component': {
-      \   'paste': '%{&paste?"\uff50":""}',
-      \   'readonly': '%R',
-      \   'charvalue': '%b',
-      \   'charvaluehex': '%B',
-      \ },
-      \ 'mode_map': {
-      \ '__' : '-',
-      \ 'n'  : "\uff2e",
-      \ 'i'  : "\uff29",
-      \ 'R'  : "\uff32",
-      \ 'c'  : "\uff23",
-      \ 'v'  : "\uff36",
-      \ 'V'  : "\uff36\uff4c",
-      \ '' : "\uff36\uff42",
-      \ 's'  : "\uff33",
-      \ 'S'  : "\uff33\uff4c",
-      \ '' : "\uff33\uff42",
-      \ 't'  : "\uff33"
-      \ },
-      \ 'component_function': {
-      \   'modified': 'LightLineModified',
-      \   'readonly': 'LightLineReadonly',
-      \   'fugitive': 'LightLineFugitive',
-      \   'filename': 'LightLineFilename',
-      \   'fileformat': 'LightLineFileformat',
-      \   'filetype': 'LightLineFiletype',
-      \   'fileencoding': 'LightLineFileencoding',
-      \   'mode': 'LightLineMode',
-      \ },
-      \ 'separator': { 'left': '', 'right': '' },
-      \ 'subseparator': { 'left': '', 'right': '' }
-      \ }
 
-function! LightLineModified()
-  return &ft =~ 'help\|vimfiler\|gundo' ? '' : &modified ? '+' : &modifiable ? '' : '-'
-endfunction
-
-function! LightLineReadonly()
-  return &ft !~? 'help\|vimfiler\|gundo' && &readonly ? '⭤' : ''
-endfunction
-
-function! LightLineFilename()
-  return ('' != LightLineReadonly() ? LightLineReadonly() . ' ' : '') .
-        \ (&ft == 'vimfiler' ? vimfiler#get_status_string() :
-        \  &ft == 'unite' ? unite#get_status_string() :
-        \  &ft == 'vimshell' ? vimshell#get_status_string() :
-        \ '' != expand('%:t') ? expand('%:t') : '[No Name]') .
-        \ ('' != LightLineModified() ? ' ' . LightLineModified() : '')
-endfunction
-
-function! LightLineFugitive()
-  if &ft !~? 'vimfiler\|gundo' && exists("*fugitive#head")
-    let branch = fugitive#head()
-    return branch !=# '' ? '⎇ '.branch : ''
-  endif
-  return ''
-endfunction
-
-function! LightLineFileformat()
-  return winwidth(0) > 70 ? &fileformat : ''
-endfunction
-
-function! LightLineFiletype()
-  return winwidth(0) > 70 ? (&filetype !=# '' ? &filetype : 'no ft') : ''
-endfunction
-
-function! LightLineFileencoding()
-  return winwidth(0) > 70 ? (&fenc !=# '' ? &fenc : &enc) : ''
-endfunction
-
-function! LightLineMode()
-  return winwidth(0) > 60 ? lightline#mode() : ''
-endfunction
-" }}}
+lua << EOF
+require'lspconfig'.pyright.setup{}
+require'lspconfig'.clangd.setup {
+    on_attach = on_attach,
+    default_config = {
+        cmd = {
+            "clangd", "--background-index", "--pch-storage=memory",
+            "--clang-tidy", "--suggest-missing-includes"
+        },
+        filetypes = {"c", "cpp", "objc", "objcpp"},
+        -- root_dir = require"nvim_lsp/util".root_pattern("compile_commands.json",
+                                                       -- "compile_flags.txt",
+                                                       -- ".git"),
+        init_option = { fallbackFlags = { "-std=c++17" } }
+    }
+}
+EOF

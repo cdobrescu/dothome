@@ -2,7 +2,7 @@
 # This script builds Neovim from sources using a Docker container that's
 # using an Docker image that's generated on the fly
 #
-# The nereated Docker image is based on the same linux distro
+# The generated Docker image is based on the same linux distro
 # as the host that this script is launched in.
 #
 # The build is done in prefixed mode and the direcotry can be mounted
@@ -10,7 +10,7 @@
 # After the script is executed you can setup up the local build by running
 #
 # cd ~/.dothome
-# stow nvim_build
+# stow .bld_nvim
 
 #set -x
 
@@ -32,8 +32,8 @@ tar -xzf *.tar.gz
 cat << EOF > Dockerfile
 FROM ${DIST_ID}:${DIST_VER}
 
-RUN apt-get update
-RUN DEBIAN_FRONTEND="noninteractive" apt-get install -y \
+RUN apt-get update && \
+    DEBIAN_FRONTEND="noninteractive" apt-get install -y \
     ninja-build gettext libtool libtool-bin autoconf \
     automake cmake g++ pkg-config unzip
 
@@ -44,7 +44,8 @@ DCK_HASH=$(md5sum Dockerfile)
 DCK_TAG=${DCK_HASH::8}
 DCK_IMG="nvim-dev:${DCK_TAG}" 
 
-docker image inspect ${DCK_IMG} &> /dev/null || docker build --rm -t ${DCK_IMG} -f Dockerfile .
+docker image inspect ${DCK_IMG} &> /dev/null || \
+        docker build --rm -t ${DCK_IMG} -f Dockerfile .
 
 ls ${HOME}/local &>/dev/null || mkdir -p $HOME/local
 
