@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+NVIM_NIGHTLY="https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage"
+NVIM_STABLE="https://github.com/neovim/neovim/releases/download/stable/nvim.appimage"
+
+NVIM_URL=${NVIM_STABLE}
+cd /tmp
+curl -L -O ${NVIM_URL}
+chmod u+x nvim.appimage
+./nvim.appimage --appimage-extract
+mkdir -p ~/.local
+cp -r squashfs-root/usr ~/.local/
+echo "Nvim has beein installed to ~/local/usr/bin"
