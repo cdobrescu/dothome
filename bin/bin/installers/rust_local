@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
-NVIM_NIGHTLY="https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage"
-NVIM_STABLE="https://github.com/neovim/neovim/releases/download/stable/nvim.appimage"
+# Install rust
+ls ~/.cargo &>/dev/null || {
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs > /tmp/rust.sh && sh /tmp/rust.sh -y
+}
 
-NVIM_URL=${NVIM_STABLE}
-cd /tmp
-curl -L -O ${NVIM_URL}
-chmod u+x nvim.appimage
-./nvim.appimage --appimage-extract
-mkdir -p ~/.local
-cp -r squashfs-root/usr ~/.local/
-echo "Nvim has beein installed to ~/local/usr/bin"
+# Install rust-analyzer
+ls ~/.cargo/bin/rust-analyzer &>/dev/null || {
+  cd /tmp && \
+  git clone https://github.com/rust-analyzer/rust-analyzer.git && \
+  cd rust-analyzer && \
+  cargo xtask install --server
+}
