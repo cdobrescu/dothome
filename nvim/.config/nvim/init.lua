@@ -1,6 +1,6 @@
 ------------------- IMPORTS ---------------------------------------------------
-require('settings')
 require('plugins')
+require('settings')
 require('keys')
 
 require('cfg-lualine')
