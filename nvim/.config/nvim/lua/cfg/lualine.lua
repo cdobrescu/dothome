@@ -8,15 +8,19 @@ require'lualine'.setup {
     disabled_filetypes = {}
   },
   sections = {
-    lualine_a = {'mode', fmt = function(str) return str:sub(1,1) end},
-    lualine_b = {'branch'},
+    lualine_a = {
+      {'mode', fmt = function(str) return str:sub(1,1) end}
+    },
+    lualine_b = {'branch', 'diff',
+      { 'diagnostics',
+        sources = {'nvim_lsp'},
+        symbols = {error = ' ', warn = ' ', info = ' ', hint = ' '}
+      }
+    },
     lualine_c = {'filename'},
     lualine_x = {
-      { 'diagnostics', 
-        sources = {"nvim_lsp"}, 
-        symbols = {error = ' ', warn = ' ', info = ' ', hint = ' '} 
-      },
       'encoding',
+      'fileformat',
       'filetype'
     },
     lualine_y = {'progress'},
@@ -33,5 +37,4 @@ require'lualine'.setup {
   tabline = {},
   extensions = {'fugitive'}
 }
-
 

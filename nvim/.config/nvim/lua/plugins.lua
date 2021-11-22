@@ -10,29 +10,61 @@ end
 return require('packer').startup(function()
   -- Packer can manage itself
   use 'wbthomason/packer.nvim'
-  
-  -- My plugins here
 
-  use 'morhetz/gruvbox'
-  use { 'nvim-lualine/lualine.nvim', requires = {'kyazdani42/nvim-web-devicons', opt = true} }
+  use { 
+    'morhetz/gruvbox',
+    config = {
+      function()
+        vim.cmd 'colorscheme gruvbox'
+        vim.g.background = 'dark'
+      end
+    }
+  }
 
-  use 'windwp/nvim-autopairs'
+  use {
+    'lewis6991/gitsigns.nvim', requires = { 'nvim-lua/plenary.nvim' },
+    config = function() require('gitsigns').setup() end
+  }
 
-  use { 'nvim-treesitter/nvim-treesitter', run = ':TSUpdate' }
-  use { 'nvim-telescope/telescope.nvim', requires = {'nvim-lua/plenary.nvim'} }
+  use { 
+    'nvim-lualine/lualine.nvim', 
+    requires = {'kyazdani42/nvim-web-devicons', opt = true},
+    config = function() require 'cfg.lualine' end
+  }
 
-  use 'neovim/nvim-lspconfig'
-  use 'glepnir/lspsaga.nvim'
-  use 'hrsh7th/cmp-nvim-lsp'
-  use 'hrsh7th/cmp-buffer'
-  use 'hrsh7th/cmp-path'
-  use 'hrsh7th/cmp-cmdline'
-  use 'hrsh7th/nvim-cmp'
-  use { 'mfussenegger/nvim-dap', requires = {'nvim-lua/plenary.nvim'} }
-  use { 'rcarriga/nvim-dap-ui', requires = {'mfussenegger/nvim-dap'} }
+  use {
+    "folke/which-key.nvim",
+    config = function() require 'cfg.which-key' end
+  }
 
-  -- Rust plugins
-  use 'simrat39/rust-tools.nvim'
+  use { 
+    'nvim-treesitter/nvim-treesitter', 
+    run = ':TSUpdate',
+    config = function() require 'cfg.treesitter' end
+  }
+
+  use { 
+    'nvim-telescope/telescope.nvim',
+    requires = {'nvim-lua/plenary.nvim'},
+    config = function() require 'cfg.telescope' end
+  }
+
+  use {
+    'simrat39/rust-tools.nvim',
+    requires = {'neovim/nvim-lspconfig'},
+    config = function() require 'cfg.lsp.rust' end
+  }
+
+  use {
+    'hrsh7th/nvim-cmp',
+    requires = {
+      { 'onsails/lspkind-nvim', module = 'lspkind' },
+      { 'hrsh7th/cmp-nvim-lsp', module = 'cmp_nvim_lsp'}, -- LSP completion source for nvim-cmp
+      { 'hrsh7th/cmp-path', module = 'cmp_path'}, -- 
+      { 'hrsh7th/cmp-buffer', module = 'cmp_buffer'}, -- 
+    },
+    config = function() require 'cfg.cmp' end
+  }
 
   -- Automatically set up your configuration after cloning packer.nvim
   -- Put this at the end after all plugins
@@ -40,5 +72,3 @@ return require('packer').startup(function()
     require('packer').sync()
   end
 end)
-
-

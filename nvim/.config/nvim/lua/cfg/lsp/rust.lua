@@ -1,15 +1,11 @@
------------------------ NVIM CMP -------------------------------
--- Configure LSP through rust-tools.nvim plugin.
--- rust-tools will configure and enable certain LSP features for us.
--- See https://github.com/simrat39/rust-tools.nvim#configuration
 local nvim_lsp = require'lspconfig'
 
 local opts = {
+    -- see https://github.com/simrat39/rust-tools.nvim#configuration
     tools = { -- rust-tools options
         autoSetHints = true,
         hover_with_actions = true,
         inlay_hints = {
-
             show_parameter_hints = false,
             parameter_hints_prefix = "",
             other_hints_prefix = "",
@@ -36,4 +32,3 @@ local opts = {
 }
 
 require('rust-tools').setup(opts)
-

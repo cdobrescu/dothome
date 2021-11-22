@@ -11,24 +11,48 @@ local function map(mode, lhs, rhs, opts)
   vim.api.nvim_set_keymap(mode, lhs, rhs, options)
 end
 
-
 g.mapleader = ' '
 g.maplocalleader = '\\'
 
--------------------- MAPPINGS ------------------------------
-map('', '<leader>c', '"+y')       -- Copy to clipboard in normal, visual, select and operator modes
-map('i', '<C-u>', '<C-g>u<C-u>')  -- Make <C-u> undo-friendly
-map('i', '<C-w>', '<C-g>u<C-w>')  -- Make <C-w> undo-friendly
+-------------------- TELESCOPE ------------------------------
 
--- <Tab> to navigate the completion menu
-map('i', '<S-Tab>', 'pumvisible() ? "\\<C-p>" : "\\<Tab>"', {expr = true})
-map('i', '<Tab>', 'pumvisible() ? "\\<C-n>" : "\\<Tab>"', {expr = true})
+local wk = require("which-key")
+-- As an example, we will the create following mappings:
+--  * <leader>ff find files
+--  * <leader>fr show recent files
+--  * <leader>fb Foobar
+-- we'll document:
+--  * <leader>fn new file
+--  * <leader>fe edit file
+-- and hide <leader>1
 
-map('n', '<C-l>', '<cmd>noh<CR>')    -- Clear highlights
-map('n', '<leader>o', 'm`o<Esc>``')  -- Insert a newline in normal mode
+wk.register(
+{
+  f = {
+    name = "file", -- optional group name
+    f = { "<cmd>Telescope find_files<cr>", "Find File" }, -- create a binding with label
+    g = { "<cmd>Telescope live_grep<cr>", "Live grep" }, -- create a binding with label
+    b = { "<cmd>Telescope buffers<cr>", "Buffers" }, -- create a binding with label
+    h = { "<cmd>Telescope help_tags<cr>", "Help tags" }, -- create a binding with label
+    -- r = { "<cmd>Telescope oldfiles<cr>", "Open Recent File", noremap=false, buffer = 123 }, -- additional options for creating the keymap
+    -- n = { "New File" }, -- just a label. don't create any mapping
+    -- e = "Edit File", -- same as above
+    -- ["1"] = "which_key_ignore",  -- special label to hide it in the popup
+    -- b = { function() print("bar") end, "Foobar" } -- you can also pass functions!
+  },
+  l = {
+    name = "lsp", -- optional group name
+    K = { '<cmd>lua vim.lsp.buf.hover()<CR>', "Hover" }, -- create a binding with label
+    h = { '<cmd>lua vim.lsp.buf.hover()<CR>', "Hover" }, -- create a binding with label
+    --'<c-]>' = { '<cmd>lua vim.lsp.buf.definition()<CR>', 'Goto Def'},
+    d = { '<cmd>lua vim.lsp.buf.definition()<CR>', 'Goto Def'},
+    s = { '<cmd>lua vim.lsp.buf.signature_help()<CR>', 'Signature'},
+    -- r = { "<cmd>Telescope oldfiles<cr>", "Open Recent File", noremap=false, buffer = 123 }, -- additional options for creating the keymap
+    -- n = { "New File" }, -- just a label. don't create any mapping
+    -- e = "Edit File", -- same as above
+    -- ["1"] = "which_key_ignore",  -- special label to hide it in the popup
+    -- b = { function() print("bar") end, "Foobar" } -- you can also pass functions!
+  },
+}, 
+{ prefix = "<leader>" })
 
-
-map('n', '<Leader>ff', '<cmd>Telescope find_files<cr>')
-map('n', '<Leader>fg', '<cmd>Telescope live_grep<cr>')
-map('n', '<Leader>fb', '<cmd>Telescope buffers<cr>')
-map('n', '<Leader>fh', '<cmd>Telescope help_tags<cr>')

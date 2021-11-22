@@ -20,5 +20,5 @@ vim.opt.shiftwidth     = 2            -- Set indenting to 2 spaces
 vim.opt.smartindent    = true         -- Inser indents automatically
 vim.opt.expandtab      = true         -- always use spaces instead of tabs
 
-vim.cmd 'colorscheme gruvbox'
-vim.g.background       = 'dark'
+vim.g.timeoutlen       = 0
+
