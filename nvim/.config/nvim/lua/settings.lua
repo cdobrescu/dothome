@@ -21,4 +21,5 @@ vim.opt.smartindent    = true         -- Inser indents automatically
 vim.opt.expandtab      = true         -- always use spaces instead of tabs
 
 vim.g.timeoutlen       = 0
+vim.opt.showmode         = false
 
