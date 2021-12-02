@@ -62,6 +62,9 @@ return require('packer').startup(function()
       { 'hrsh7th/cmp-nvim-lsp', module = 'cmp_nvim_lsp'}, -- LSP completion source for nvim-cmp
       { 'hrsh7th/cmp-path', module = 'cmp_path'}, -- 
       { 'hrsh7th/cmp-buffer', module = 'cmp_buffer'}, -- 
+      { 'dcampos/cmp-snippy', module = 'cmp_snippy', 
+        requires = {'dcampos/nvim-snippy'}
+      }, -- 
     },
     config = function() require 'cfg.cmp' end
   }
