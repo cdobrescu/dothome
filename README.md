@@ -5,6 +5,22 @@ Checkout using `git clone --recursive https://github.com/cdobrescu/dothome.git ~
 - gruvbox - Neovim colorscheme
 - vim-plug - Neovim package manager
 
+## TMUX setup
+
+[Tmux plugin manager](https://github.com/tmux-plugins/tpm)
+
+### TMUX config
+```
+cd ~/.dothome
+stow tmux
+
+# start tmux
+tmux
+
+# Install plugins
+Ctrl+B I
+```
+
 ## Nvim setup
 ### Nvim config
 ```
