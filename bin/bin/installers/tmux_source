@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+# This script builds Tmux from sources using a Docker container that's
+# using an Docker image that's generated on the fly
+#
+# The generated Docker image is based on the same linux distro
+# as the host that this script is launched in.
+#
+# The build is done in prefixed mode and the directory can be mounted
+# in ~/.local
+# After the script is executed you can setup up the local build by running
+#
+# cd ~/.dothome
+# stow .bld_tmux
+
+#set -x
+
+TMUX_VER="3.3a"
+
+SRC_URL="https://github.com/tmux/tmux/archive/refs/tags/${TMUX_VER}.tar.gz"
+WORKSPACE=$(mktemp -d)
+DIST_ID=$(cat /etc/*release|grep "^ID=" |cut -d= -f2)
+DIST_VER=$(cat /etc/*release|grep "^VERSION_ID=" |sed -e 's/"//g'  |cut -d= -f2)
+USER_UID=$(id -u)
+USER_NAME=$(id -un)
+TMUX_BUILD_DIR=${HOME}/.dothome/.bld_tmux/.local
+
+[ -d ${TMUX_BUILD_DIR} ] || mkdir -p ${TMUX_BUILD_DIR}
+cd ${WORKSPACE}
+
+curl -LO ${SRC_URL}
+tar -xzf *.tar.gz
+
+cat << EOF > Dockerfile
+FROM ${DIST_ID}:${DIST_VER}
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND="noninteractive" apt-get install -y \
+    libevent-dev ncurses-dev build-essential bison pkg-config gettext libtool libtool-bin autoconf \
+    automake cmake g++ unzip
+
+RUN useradd -m ${USER_NAME} -s /usr/bin/bash -u ${USER_UID}
+EOF
+
+DCK_HASH=$(md5sum Dockerfile)
+DCK_TAG=${DCK_HASH::8}
+DCK_IMG="tmux-dev:${DCK_TAG}" 
+
+docker image inspect ${DCK_IMG} &> /dev/null || \
+        docker build --rm -t ${DCK_IMG} -f Dockerfile .
+
+ls ${HOME}/.local &>/dev/null || mkdir -p $HOME/.local
+set -x
+docker run -ti --rm \
+	-u ${USER_NAME} \
+	-v ${TMUX_BUILD_DIR}:/home/${USER_NAME}/.local \
+	-v ${WORKSPACE}/tmux-${TMUX_VER}:/home/${USER_NAME}/tmux \
+	-w /home/${USER_NAME}/tmux \
+	${DCK_IMG} bash -xc \
+	"sh autogen.sh && ./configure --prefix=$HOME/.local && make && make install"
+set +x
+cd -
+
+echo "Cleanup steps:"
+echo "rm -rf ${WORKSPACE}"
+echo "docker rmi ${DCK_IMG}"
+
+echo "Install deps:"
+echo "sudo apt install libevent-core-2.1-7"
+
+
