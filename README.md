@@ -48,3 +48,11 @@ cd ~/.dothome
 stow .bld_nvim
 ```
 Next you may have to restart your terminal so `~/.local/bin` is added the `$PATH`
+
+
+## Alacritty
+
+After building form source you can set it as the default terminal emulator using 
+```
+gsettings set org.gnome.desktop.default-applications.terminal exec  alacritty
+```
