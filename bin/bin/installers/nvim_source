@@ -48,6 +48,7 @@ docker image inspect ${DCK_IMG} &> /dev/null || \
     docker build --rm -t ${DCK_IMG} -f Dockerfile .
 
 ls ${HOME}/.local &>/dev/null || mkdir -p $HOME/.local
+sudo chown -R ${USER_NAME}:${USER_NAME} ${HOME/.local}
 
 docker run -ti --rm \
 	-u ${USER_NAME} \
