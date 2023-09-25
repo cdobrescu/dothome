@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+VERSION="0.40.2"
+KERNEL_NAME=$(uname -s)
+ARCH_NAME=$(uname -m)
+URL="https://github.com/jesseduffield/lazygit/releases/download/v${VERSION}/lazygit_${VERSION}_${KERNEL_NAME}_${ARCH_NAME}.tar.gz"
+
+
+cd /tmp
+curl -L -O ${URL}
+tar -xzf lazygit_${VERSION}_${KERNEL_NAME}_${ARCH_NAME}.tar.gz
+cp lazygit ${HOME}/.local/bin && rm  lazygit_${VERSION}_${KERNEL_NAME}_${ARCH_NAME}.tar.gz
