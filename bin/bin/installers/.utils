@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#installers utilities
+
+#
+# A function to print out error messages
+#
+err() {
+	echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
+}
+
+#
+# A function that echoes the latest release version for a Github repo
+# specified in short form:
+# user/repo
+#
+function getLatestVersion() {
+	GH_SHORTNAME=$1
+	LATEST_URL="https://github.com/${GH_SHORTNAME}/releases/latest"
+	echo "$(curl -Ls -o /dev/null -w '%{url_effective}\n' ${LATEST_URL} | awk -F/ '{print  $NF}')"
+}
