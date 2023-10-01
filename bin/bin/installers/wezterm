@@ -78,5 +78,7 @@ docker exec -ti wez-build bash -lc "cd target/release; cp wezterm{,-gui,-mux-ser
 popd
 popd
 
+echo "Cleanup steps:"
 echo "docker kill wez-build"
 echo "docker rmi ${DCK_IMG}"
+echo "rm -rf /tmp/wezterm*"
