@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 #installers utilities
 
+KERNEL_NAME=$(uname -s)
+ARCH_NAME=$(uname -m)
+DIST_ID=$(cat /etc/*release | grep "^ID=" | cut -d= -f2)
+DIST_VER=$(cat /etc/*release | grep "^VERSION_ID=" | sed -e 's/"//g' | cut -d= -f2)
+USER_UID=$(id -u)
+USER_NAME=$(id -un)
+
 #
 # A function to print out error messages
 #

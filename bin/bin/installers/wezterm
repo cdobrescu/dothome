@@ -1,17 +1,11 @@
 #!/usr/bin/env bash
 set -x
 
+GH_SHORTNAME="wez/wezterm"
+
 . ${HOME}/.dothome/bin/bin/installers/.utils
 
-GH_SHORTNAME="wez/wezterm"
 VERSION="$(getLatestVersion ${GH_SHORTNAME})"
-KERNEL_NAME=$(uname -s)
-ARCH_NAME=$(uname -m)
-
-DIST_ID=$(cat /etc/*release | grep "^ID=" | cut -d= -f2)
-DIST_VER=$(cat /etc/*release | grep "^VERSION_ID=" | sed -e 's/"//g' | cut -d= -f2)
-USER_UID=$(id -u)
-USER_NAME=$(id -un)
 
 SRC_DOWNLOAD_URL="https://github.com/${GH_SHORTNAME}/archive/refs/tags/${VERSION}.tar.gz"
 
