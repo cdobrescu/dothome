@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+set -x
+
+GH_SHORTNAME="BurntSushi/ripgrep"
+
+. ${HOME}/.dothome/bin/bin/installers/.utils
+
+VERSION="$(getLatestVersion ${GH_SHORTNAME})"
+
+SRC_DOWNLOAD_URL="https://github.com/${GH_SHORTNAME}/archive/refs/tags/${VERSION}.tar.gz"
+
+GIT_CLONE_URL="https://github.com/${GH_SHORTNAME}.git"
+
+GIT_MAIN_BRANCH="master"
+WORKSPACE_DIR=$(mktemp -d /tmp/$(basename ${GH_SHORTNAME}).XXXXXX)
+
+pushd ${WORKSPACE_DIR}
+SRC_DIR="$(basename ${GH_SHORTNAME})-${VERSION}"
+git clone --depth=1 --branch=${GIT_MAIN_BRANCH} --recursive $GIT_CLONE_URL $SRC_DIR
+
+cat <<EOF >Dockerfile
+ARG DIST_ID=${DIST_ID}
+ARG DIST_VER=${DIST_VER}
+
+FROM \${DIST_ID}:\${DIST_VER}
+
+ARG USER_NAME=${USER_NAME}
+ARG USER_UID=${USER_UID}
+
+RUN apt-get update && \
+	DEBIAN_FRONTEND="noninteractive" apt-get install -y \
+		curl sudo git gcc && \
+  useradd -m \${USER_NAME} -s /usr/bin/bash -u \${USER_UID} && \
+	echo "\${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers.d/\${USER_NAME}
+
+USER \${USER_NAME}
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+EOF
+
+DCK_HASH=$(md5sum Dockerfile)
+DCK_TAG=${DCK_HASH::8}
+DCK_IMG="$(basename ${GH_SHORTNAME}):${DCK_TAG}"
+
+docker image inspect ${DCK_IMG} &>/dev/null ||
+	docker build --rm -t ${DCK_IMG} -f Dockerfile .
+
+pushd ${SRC_DIR}
+
+docker run --rm -d \
+	-u ${USER_UID} \
+	--name wez-build \
+	-v $(pwd):/home/${USER_NAME}/workspace \
+	-v${HOME}/.local:/home/${USER_NAME}/.local \
+	-w /home/${USER_NAME}/workspace \
+	${DCK_IMG} bash -lc "sleep infinity"
+
+docker exec -ti wez-build bash -lc "cargo build --release"
+docker exec -ti wez-build bash -lc "cp target/release/rg ~/.local"
+
+echo "Cleanup steps:"
+echo "docker kill wez-build"
+echo "docker rmi ${DCK_IMG}"
+echo "rm -rf /tmp/ripgrep*"
