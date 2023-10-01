@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -x
+
+. ${HOME}/.dothome/bin/bin/installers/.utils
+
+GH_SHORTNAME="wez/wezterm"
+VERSION="$(getLatestVersion ${GH_SHORTNAME})"
+KERNEL_NAME=$(uname -s)
+ARCH_NAME=$(uname -m)
+
+DIST_ID=$(cat /etc/*release | grep "^ID=" | cut -d= -f2)
+DIST_VER=$(cat /etc/*release | grep "^VERSION_ID=" | sed -e 's/"//g' | cut -d= -f2)
+USER_UID=$(id -u)
+USER_NAME=$(id -un)
+
+SRC_DOWNLOAD_URL="https://github.com/${GH_SHORTNAME}/archive/refs/tags/${VERSION}.tar.gz"
+
+GIT_CLONE_URL="https://github.com/${GH_SHORTNAME}.git"
+
+tmp_dir=$(mktemp -d /tmp/$(basename ${GH_SHORTNAME}).XXXXXX)
+
+pushd ${tmp_dir}
+
+# Download src and unzip
+#curl -L -O ${SRC_DOWNLOAD_URL}
+#tar -xzf $(basename ${SRC_DOWNLOAD_URL})
+SRC_DIR="$(basename ${GH_SHORTNAME})-${VERSION}"
+
+# Clone source from git
+git clone --depth=1 --branch=main --recursive $GIT_CLONE_URL $SRC_DIR
+pushd $SRC_DIR
+git submodule update --init --recursive
+popd
+
+# generate Dockerfile
+cat <<EOF >Dockerfile
+ARG DIST_ID=${DIST_ID}
+ARG DIST_VER=${DIST_VER}
+
+FROM \${DIST_ID}:\${DIST_VER}
+
+ARG USER_NAME=${USER_NAME}
+ARG USER_UID=${USER_UID}
+
+RUN apt-get update && \
+	DEBIAN_FRONTEND="noninteractive" apt-get install -y \
+		curl sudo git && \
+  useradd -m \${USER_NAME} -s /usr/bin/bash -u \${USER_UID} && \
+	echo "\${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >>/etc/sudoers.d/\${USER_NAME}
+
+COPY ./${SRC_DIR}/get-deps /get-deps
+USER \${USER_NAME}
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+# RUN bash -lc "/get-deps"
+
+EOF
+
+DCK_HASH=$(md5sum Dockerfile)
+DCK_TAG=${DCK_HASH::8}
+DCK_IMG="$(basename ${GH_SHORTNAME}):${DCK_TAG}"
+
+docker image inspect ${DCK_IMG} &>/dev/null ||
+	docker build --rm -t ${DCK_IMG} -f Dockerfile .
+
+pushd ${SRC_DIR}
+
+docker run --rm -d \
+	-u ${USER_UID} \
+	--name wez-build \
+	-v $(pwd):/home/${USER_NAME}/workspace \
+	-v${HOME}/.local:/home/${USER_NAME}/.local \
+	-w /home/${USER_NAME}/workspace \
+	${DCK_IMG} bash -lc "sleep infinity"
+
+docker exec -ti wez-build bash -lc "/get-deps"
+docker exec -ti wez-build bash -lc "cargo build --release"
+docker exec -ti wez-build bash -lc "cd target/release; cp wezterm{,-gui,-mux-server} strip-ansi-escapes sync-color-schemes ~/.local/bin"
+popd
+popd
+
+echo "docker kill wez-build"
+echo "docker rmi ${DCK_IMG}"
