@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
+#set -x
 
-VERSION="0.40.2"
+GH_SHORTNAME="jesseduffield/lazygit"
+
+. ${HOME}/.dothome/bin/bin/installers/.utils
+
+VERSION="$(getLatestVersion ${GH_SHORTNAME})"
 KERNEL_NAME=$(uname -s)
 ARCH_NAME=$(uname -m)
-URL="https://github.com/jesseduffield/lazygit/releases/download/v${VERSION}/lazygit_${VERSION}_${KERNEL_NAME}_${ARCH_NAME}.tar.gz"
-
+ARCH_NAME=${ARCH_NAME/aarch64/arm64}
+TGZ="lazygit_${VERSION:1}_${KERNEL_NAME}_${ARCH_NAME}.tar.gz"
+URL="https://github.com/${GH_SHORTNAME}/releases/download/${VERSION}/${TGZ}"
 
 cd /tmp
-curl -L -O ${URL}
-tar -xzf lazygit_${VERSION}_${KERNEL_NAME}_${ARCH_NAME}.tar.gz
-cp lazygit ${HOME}/.local/bin && rm  lazygit_${VERSION}_${KERNEL_NAME}_${ARCH_NAME}.tar.gz
+curl -L -O ${URL} || exit 1
+tar -xzf ${TGZ} || exit 1
+cp lazygit ${HOME}/.local/bin && rm ${TGZ}
