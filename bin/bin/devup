@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+
+# For running UI apps, run:
+# xhost +local:
+# on the host 
+
 DEVUP_STORE="${HOME}/.devup"
 BUILD_CONTAINER="devup_build"
 BASE_IMAGE="ubuntu:22.04"
@@ -68,7 +73,8 @@ RUN apt update \
     && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     sudo curl clang git cmake \
     ripgrep lldb \
-    ca-certificates curl gnupg
+    ca-certificates curl gnupg \
+    xauth fluxbox x11-apps
 
 RUN useradd -u 1000 -m -U -s /bin/bash ${USER_NAME} \
     && echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/${USER_NAME}
@@ -102,6 +108,9 @@ EOF
 docker inspect devup || {
 docker run --rm -d \
   --name devup \
+  --net host \
+  -e DISPLAY=${DISPLAY} \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
   -v ${DEVUP_STORE}/home:/home/user \
   -v ${HOME}/work:/home/user/workspace \
   -v ${HOME}/.ssh:/home/user/.ssh \
