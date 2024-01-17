@@ -1,81 +1,110 @@
 #!/usr/bin/env bash
-set -x
-
-TRUE=0
-FALSE=1
-
-declare -A FEATURES
-
-BASE_DOCKER_FILE=~/.devup/Dockerfile
-BASE_IMAGE_NAME=cdo-dev
-CONTAINER_NAME=cdo-dev
-HOME_CACHE=$(pwd)/.up/.home
-CONTAINER_USER=user
-
-usage() { 
-  echo "Usage: $0 [-s <45|90>] [-p <string>]" 1>&2; exit 1; 
-}
-
-should_extract_home() {
-  if [ ! -d ${HOME_CACHE} ]; then
-    return $TRUE
-  fi
-  return $FALSE
-}
-
-should_build_image() 
-{
-  if [ ! -f $(pwd)/.up/Dockerfile.md5 ]; then
-    return ${TRUE}
-  fi
-
-  if ! md5sum -c .up/Dockerfile.md5 &>/dev/null; then
-    return ${TRUE}
-  fi
-
-  return ${FALSE}
-}
-
-if [ ! -d $(pwd)/.up ]; then
-  echo ".up not present... creating"
-  mkdir $(pwd)/.up
-fi
-
-should_build_image && {
-  echo "Need to build docker image"
-  cd .up && \
-  docker build --rm  -t ${BASE_IMAGE_NAME} -f ~/.devup/Dockerfile . && \
-  md5sum ~/.devup/Dockerfile > Dockerfile.md5 && \
-  cd -
-}
-
-should_extract_home && {
-  if ! ls ${HOME_CACHE}; then
-	echo "Pull home directory"
-        mkdir ${HOME_CACHE}
-        docker run --rm -u `id -u` \
-                --name ${CONTAINER_NAME} \
-                -v ${HOME_CACHE}:/.home/${CONTAINER_USER} ${BASE_IMAGE_NAME} \
-                bash -c "sudo cp -r /home/${CONTAINER_USER} /.home && sudo chown -R ${CONTAINER_USER}:${CONTAINER_USER} /.home"
-  fi
-}
+DEVUP_STORE="${HOME}/.devup"
+BUILD_CONTAINER="devup_build"
+BASE_IMAGE="ubuntu:22.04"
+USER_NAME="user"
 
 
-checkout_dothome()
-{
-  ls .up/.home/.dothome &>/dev/null || {
-    cd .up/.home
-    git clone --recursive git@github.com:cdobrescu/dothome.git .dothome
-    cd -
+mkdir -p ${DEVUP_STORE}/home/.config
+
+function start_build_container() {
+  docker ps |grep -q "${BUILD_CONTAINER}" || {
+    docker run -d --rm --name ${BUILD_CONTAINER} -v ${DEVUP_STORE}/home:/home/user ${BASE_IMAGE} bash -c "sleep infinity" 
+  }
+
+  docker exec ${BUILD_CONTAINER} bash -c "type curl &>/dev/null" || {
+    docker exec ${BUILD_CONTAINER} bash -c "apt-get update && apt-get install -y curl sudo git"
+  }
+
+  docker exec ${BUILD_CONTAINER} bash -c "id -u user &>/dev/null" || {
+    docker  exec ${BUILD_CONTAINER} bash -c "useradd ${USER_NAME}"
   }
 }
 
-checkout_dothome
+[[ -f ${DEVUP_STORE}/home/.bashrc ]] || {
+  start_build_container
+  docker  exec ${BUILD_CONTAINER} bash -c "cp  /etc/skel/.* /home/user/; chown -R user:user /home/user" &>/dev/null
+}
+
+[[ -d ${DEVUP_STORE}/home/.dothome ]] || {
+  start_build_container
+  git clone --recursive git@github.com:cdobrescu/dothome.git ${DEVUP_STORE}/home/.dothome
+}
+
+# install nvim
+[[ -f ${DEVUP_STORE}/home/.local/bin/nvim ]] || {
+  mkdir -p ${DEVUP_STORE}/home/.local
+  ${DEVUP_STORE}/home/.dothome/bin/bin/installers/nvim_source ${DEVUP_STORE}/home/.local
+}
+
+# install rust
+[[ -d ${DEVUP_STORE}/home/.cargo ]] || {
+  start_build_container
+  docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -c "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |bash -s -- -y -q"
+  docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -lc "rustup component add rust-analyzer"
+}
+
+# install NVM
+[[ -d ${DEVUP_STORE}/home/.nvm ]] || {
+  start_build_container
+  docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -c "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh |bash"
+  docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -lc "nvm install --lts"
+}
+
+# install nvim config
+[[ -d ${DEVUP_STORE}/home/.config/nvim ]] || {
+  git clone https://github.com/NvChad/NvChad ${DEVUP_STORE}/home/.config/nvim --depth 1
+  git clone git@github.com:cdobrescu/nvchad-custom.git ${DEVUP_STORE}/home/.config/nvim/lua/custom
+}
+
+docker ps |grep -q "${BUILD_CONTAINER}" && {
+  docker stop ${BUILD_CONTAINER}
+}
+
+[[ -f ${DEVUP_STORE}/Dockerfile ]] || {
+  cat <<EOF > ${DEVUP_STORE}/Dockerfile
+FROM ${BASE_IMAGE}
+RUN apt update \
+    && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
+    sudo curl clang git cmake \
+    ripgrep lldb \
+    ca-certificates curl gnupg
+
+RUN useradd -u 1000 -m -U -s /bin/bash ${USER_NAME} \
+    && echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/${USER_NAME}
+    # && usermod -aG docker  ${USER_NAME}
+
+USER ${USER_NAME}
+
+EOF
+
+  docker build -t devup-main -f ${DEVUP_STORE}/Dockerfile ${DEVUP_STORE}
+}
 
 
-exec docker run  --rm -ti \
-  -v $(pwd):/workspace \
-  -v $(pwd)/.up/.home:/home/user \
-  --net=host -e DISPLAY=$DISPLAY \
-  -w /workspace \
-  cdo-dev bash -c bash
+# Features:
+# - dev-user:
+#   
+#   image packages:
+#     sudo
+#
+#   image scripts:
+#     add user
+#     passwordless sudo
+#     set env var for dev user name
+# - docker in docker:
+#   https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
+#   images packages:
+#     ca-certificates curl gnupg
+#   image scripts:
+#     
+#     
+docker inspect devup || {
+docker run --rm -d \
+  --name devup \
+  -v ${DEVUP_STORE}/home:/home/user \
+  -v ${HOME}/work:/home/user/workspace \
+  -v ${HOME}/.ssh:/home/user/.ssh \
+  -w /home/user/workspace \
+  devup-main bash -c "sleep infinity"
+}

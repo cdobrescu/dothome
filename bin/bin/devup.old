@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -x
+
+TRUE=0
+FALSE=1
+
+declare -A FEATURES
+
+BASE_DOCKER_FILE=~/.devup/Dockerfile
+BASE_IMAGE_NAME=cdo-dev
+CONTAINER_NAME=cdo-dev
+HOME_CACHE=$(pwd)/.up/.home
+CONTAINER_USER=user
+
+usage() { 
+  echo "Usage: $0 [-s <45|90>] [-p <string>]" 1>&2; exit 1; 
+}
+
+should_extract_home() {
+  if [ ! -d ${HOME_CACHE} ]; then
+    return $TRUE
+  fi
+  return $FALSE
+}
+
+should_build_image() 
+{
+  if [ ! -f $(pwd)/.up/Dockerfile.md5 ]; then
+    return ${TRUE}
+  fi
+
+  if ! md5sum -c .up/Dockerfile.md5 &>/dev/null; then
+    return ${TRUE}
+  fi
+
+  return ${FALSE}
+}
+
+if [ ! -d $(pwd)/.up ]; then
+  echo ".up not present... creating"
+  mkdir $(pwd)/.up
+fi
+
+should_build_image && {
+  echo "Need to build docker image"
+  cd .up && \
+  docker build --rm  -t ${BASE_IMAGE_NAME} -f ~/.devup/Dockerfile . && \
+  md5sum ~/.devup/Dockerfile > Dockerfile.md5 && \
+  cd -
+}
+
+should_extract_home && {
+  if ! ls ${HOME_CACHE}; then
+	echo "Pull home directory"
+        mkdir ${HOME_CACHE}
+        docker run --rm -u `id -u` \
+                --name ${CONTAINER_NAME} \
+                -v ${HOME_CACHE}:/.home/${CONTAINER_USER} ${BASE_IMAGE_NAME} \
+                bash -c "sudo cp -r /home/${CONTAINER_USER} /.home && sudo chown -R ${CONTAINER_USER}:${CONTAINER_USER} /.home"
+  fi
+}
+
+
+checkout_dothome()
+{
+  ls .up/.home/.dothome &>/dev/null || {
+    cd .up/.home
+    git clone --recursive git@github.com:cdobrescu/dothome.git .dothome
+    cd -
+  }
+}
+
+checkout_dothome
+
+
+exec docker run  --rm -ti \
+  -v $(pwd):/workspace \
+  -v $(pwd)/.up/.home:/home/user \
+  --net=host -e DISPLAY=$DISPLAY \
+  -w /workspace \
+  cdo-dev bash -c bash
