@@ -69,14 +69,14 @@ docker ps |grep -q "${BUILD_CONTAINER}" && {
 [[ -f ${DEVUP_STORE}/Dockerfile ]] || {
   cat <<EOF > ${DEVUP_STORE}/Dockerfile
 FROM ${BASE_IMAGE}
-RUN apt update \
-    && DEBIAN_FRONTEND="noninteractive" apt-get -y install \
-    sudo curl clang git cmake \
-    ripgrep lldb \
-    ca-certificates curl gnupg \
+RUN apt update \\
+    && DEBIAN_FRONTEND="noninteractive" apt-get -y install \\
+    sudo curl clang git cmake \\
+    ripgrep lldb \\
+    ca-certificates curl gnupg \\
     xauth fluxbox x11-apps
 
-RUN useradd -u 1000 -m -U -s /bin/bash ${USER_NAME} \
+RUN useradd -u 1000 -m -U -s /bin/bash ${USER_NAME} \\
     && echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/${USER_NAME}
     # && usermod -aG docker  ${USER_NAME}
 

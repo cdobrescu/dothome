@@ -13,18 +13,25 @@
 # cd ~/.dothome
 # stow .bld_tmux
 
-#set -x
+set -x
 
-TMUX_VER="3.3a"
+GH_SHORTNAME="tmux/tmux"
 
-SRC_URL="https://github.com/tmux/tmux/archive/refs/tags/${TMUX_VER}.tar.gz"
+. ${HOME}/.dothome/bin/bin/installers/.utils
+
+VERSION="$(getLatestVersion ${GH_SHORTNAME})"
+
+SRC_URL="https://github.com/${GH_SHORTNAME}/archive/refs/tags/${VERSION}.tar.gz"
+DL_URL="https://github.com/tmux/tmux/releases/download/${VERSION}/tmux-${VERSION}.tar.gz"
 WORKSPACE=$(mktemp -d)
 DIST_ID=$(cat /etc/*release|grep "^ID=" |cut -d= -f2)
 DIST_VER=$(cat /etc/*release|grep "^VERSION_ID=" |sed -e 's/"//g'  |cut -d= -f2)
 USER_UID=$(id -u)
 USER_NAME=$(id -un)
 TMUX_BUILD_DIR=${HOME}/.dothome/.bld_tmux/.local
+#curl -L -o /tmp/tmux-${VERSION}.tar.gz ${DL_URL}
 
+#exit 2
 [ -d ${TMUX_BUILD_DIR} ] || mkdir -p ${TMUX_BUILD_DIR}
 cd ${WORKSPACE}
 
@@ -54,7 +61,7 @@ set -x
 docker run -ti --rm \
 	-u ${USER_NAME} \
 	-v ${TMUX_BUILD_DIR}:/home/${USER_NAME}/.local \
-	-v ${WORKSPACE}/tmux-${TMUX_VER}:/home/${USER_NAME}/tmux \
+	-v ${WORKSPACE}/tmux-${VERSION}:/home/${USER_NAME}/tmux \
 	-w /home/${USER_NAME}/tmux \
 	${DCK_IMG} bash -xc \
 	"sh autogen.sh && ./configure --prefix=$HOME/.local && make && make install"
