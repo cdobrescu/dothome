@@ -13,7 +13,7 @@
 # cd ~/.dothome
 # stow .bld_nvim
 
-#set -x
+set -x
 
 SRC_URL="https://github.com/neovim/neovim/archive/refs/tags/stable.tar.gz"
 WORKSPACE=$(mktemp -d)
@@ -21,7 +21,7 @@ DIST_ID=$(cat /etc/*release|grep "^ID=" |cut -d= -f2)
 DIST_VER=$(cat /etc/*release|grep "^VERSION_ID=" |sed -e 's/"//g'  |cut -d= -f2)
 USER_UID=$(id -u)
 USER_NAME=$(id -un)
-NVIM_BUILD_DIR=${HOME}/.local
+NVIM_BUILD_DIR=${1:-${HOME}/.local}
 
 [ -d ${NVIM_BUILD_DIR} ] || mkdir -p ${NVIM_BUILD_DIR}
 cd ${WORKSPACE}
@@ -55,8 +55,8 @@ docker run -ti --rm \
 	-v ${NVIM_BUILD_DIR}:/home/${USER_NAME}/.local \
 	-v ${WORKSPACE}/neovim-stable:/home/${USER_NAME}/nvim \
 	-w /home/${USER_NAME}/nvim \
-	${DCK_IMG} bash -xc \
-	"make -j4 CMAKE_BUILD_TYPE=Release CMAKE_INSTALL_PREFIX=$HOME/.local install"
+	${DCK_IMG} bash -xlc \
+	'make -j4 CMAKE_BUILD_TYPE=Release CMAKE_INSTALL_PREFIX=$HOME/.local install'
 
 cd -
 
