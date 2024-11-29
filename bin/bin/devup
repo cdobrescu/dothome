@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -x
 
 # For running UI apps, run:
 # xhost +local:
@@ -6,7 +7,11 @@
 
 DEVUP_STORE="${HOME}/.devup"
 BUILD_CONTAINER="devup_build"
-BASE_IMAGE="ubuntu:22.04"
+DIST_ID=$(cat /etc/*release|grep "^ID=" |cut -d= -f2)
+DIST_VER=$(cat /etc/*release|grep "^VERSION_ID=" |sed -e 's/"//g'  |cut -d= -f2)
+BASE_IMAGE="${DIST_ID}:${DIST_VER}"
+USER_UID=$(id -u)
+USER_NAME=$(id -un)
 USER_NAME="user"
 
 
@@ -22,6 +27,8 @@ function start_build_container() {
   }
 
   docker exec ${BUILD_CONTAINER} bash -c "id -u user &>/dev/null" || {
+    docker  exec ${BUILD_CONTAINER} bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "'${USER_UID}:${USER_UID}'"| cut -d: -f4 |xargs rm -rf'
+    docker  exec ${BUILD_CONTAINER} bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "'${USER_UID}:${USER_UID}'"| cut -d: -f1 |xargs userdel'
     docker  exec ${BUILD_CONTAINER} bash -c "useradd ${USER_NAME}"
   }
 }
@@ -76,7 +83,9 @@ RUN apt update \\
     ca-certificates curl gnupg \\
     xauth fluxbox x11-apps
 
-RUN useradd -u 1000 -m -U -s /bin/bash ${USER_NAME} \\
+RUN bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f4 |xargs rm -rf || true' && \\
+	  bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f1 |xargs userdel || true' && \\
+	  useradd -u 1000 -m -U -s /bin/bash ${USER_NAME} \\
     && echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/${USER_NAME}
     # && usermod -aG docker  ${USER_NAME}
 
@@ -105,7 +114,7 @@ EOF
 #   image scripts:
 #     
 #     
-docker inspect devup || {
+docker inspect devup |&>/dev/null | {
 docker run --rm -d \
   --name devup \
   --net host \
