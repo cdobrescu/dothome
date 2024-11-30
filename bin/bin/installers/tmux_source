@@ -28,7 +28,8 @@ DIST_ID=$(cat /etc/*release|grep "^ID=" |cut -d= -f2)
 DIST_VER=$(cat /etc/*release|grep "^VERSION_ID=" |sed -e 's/"//g'  |cut -d= -f2)
 USER_UID=$(id -u)
 USER_NAME=$(id -un)
-TMUX_BUILD_DIR=${HOME}/.dothome/.bld_tmux/.local
+# TMUX_BUILD_DIR=${HOME}/.dothome/.bld_tmux/.local
+TMUX_BUILD_DIR=${1:-${HOME}/.local}
 #curl -L -o /tmp/tmux-${VERSION}.tar.gz ${DL_URL}
 
 #exit 2
