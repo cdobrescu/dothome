@@ -49,6 +49,12 @@ function start_build_container() {
   ${DEVUP_STORE}/home/.dothome/bin/bin/installers/nvim_source ${DEVUP_STORE}/home/.local
 }
 
+# install tmux
+[[ -f ${DEVUP_STORE}/home/.local/bin/tmux ]] || {
+  mkdir -p ${DEVUP_STORE}/home/.local
+  ${DEVUP_STORE}/home/.dothome/bin/bin/installers/tmux_source ${DEVUP_STORE}/home/.local
+}
+
 # install rust
 [[ -d ${DEVUP_STORE}/home/.cargo ]] || {
   start_build_container
@@ -64,10 +70,10 @@ function start_build_container() {
 }
 
 # install nvim config
-[[ -d ${DEVUP_STORE}/home/.config/nvim ]] || {
-  git clone https://github.com/NvChad/NvChad ${DEVUP_STORE}/home/.config/nvim --depth 1
-  git clone git@github.com:cdobrescu/nvchad-custom.git ${DEVUP_STORE}/home/.config/nvim/lua/custom
-}
+# [[ -d ${DEVUP_STORE}/home/.config/nvim ]] || {
+#   git clone https://github.com/NvChad/NvChad ${DEVUP_STORE}/home/.config/nvim --depth 1
+#   git clone git@github.com:cdobrescu/nvchad-custom.git ${DEVUP_STORE}/home/.config/nvim
+# }
 
 docker ps |grep -q "${BUILD_CONTAINER}" && {
   docker stop ${BUILD_CONTAINER}
@@ -76,9 +82,14 @@ docker ps |grep -q "${BUILD_CONTAINER}" && {
 [[ -f ${DEVUP_STORE}/Dockerfile ]] || {
   cat <<EOF > ${DEVUP_STORE}/Dockerfile
 FROM ${BASE_IMAGE}
+
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV PATH=/home/${USER_NAME}/.local/bin:$PATH
+
 RUN apt update \\
     && DEBIAN_FRONTEND="noninteractive" apt-get -y install \\
-    sudo curl clang git cmake \\
+    sudo curl clang git cmake unzip less libevent-core-2* \\
     ripgrep lldb \\
     ca-certificates curl gnupg \\
     xauth fluxbox x11-apps
