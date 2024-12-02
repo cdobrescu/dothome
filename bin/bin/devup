@@ -98,8 +98,7 @@ ENV PATH=/home/${USER_NAME}/.local/bin:$PATH
 RUN apt update \\
     && DEBIAN_FRONTEND="noninteractive" apt-get -y install \\
     sudo curl clang git cmake unzip less libevent-core-2* \\
-    ripgrep lldb \\
-    ca-certificates curl gnupg \\
+    ripgrep lldb zip unzip stow ca-certificates gnupg \\
     xauth fluxbox x11-apps
 
 RUN bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f4 |xargs rm -rf || true' && \\
