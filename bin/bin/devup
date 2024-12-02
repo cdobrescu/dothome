@@ -62,6 +62,15 @@ function start_build_container() {
   docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -lc "rustup component add rust-analyzer"
 }
 
+# install sdkman & jdk 21
+[[ -d ${DEVUP_STORE}/home/.sdkman ]] || {
+  start_build_container
+  docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -c "curl -s https://get.sdkman.io |bash"
+  docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -lc "sdk install java 21.0.5-amzn"
+  docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -lc "sdk install maven"
+  docker exec -u ${USER_NAME} ${BUILD_CONTAINER} bash -lc "sdk install gradle"
+}
+
 # install NVM
 [[ -d ${DEVUP_STORE}/home/.nvm ]] || {
   start_build_container
@@ -70,10 +79,9 @@ function start_build_container() {
 }
 
 # install nvim config
-# [[ -d ${DEVUP_STORE}/home/.config/nvim ]] || {
-#   git clone https://github.com/NvChad/NvChad ${DEVUP_STORE}/home/.config/nvim --depth 1
-#   git clone git@github.com:cdobrescu/nvchad-custom.git ${DEVUP_STORE}/home/.config/nvim
-# }
+[[ -d ${DEVUP_STORE}/home/.config/nvim ]] || {
+  git clone git@github.com:cdobrescu/nvchad-custom.git ${DEVUP_STORE}/home/.config/nvim
+}
 
 docker ps |grep -q "${BUILD_CONTAINER}" && {
   docker stop ${BUILD_CONTAINER}
