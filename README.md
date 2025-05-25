@@ -56,3 +56,4 @@ After building form source you can set it as the default terminal emulator using
 ```
 gsettings set org.gnome.desktop.default-applications.terminal exec  alacritty
 ```
+

@@ -38,9 +38,11 @@ FROM ${DIST_ID}:${DIST_VER}
 
 RUN apt-get update && \
     DEBIAN_FRONTEND="noninteractive" apt-get install -y \
-	curl gcc cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3 
+	curl gcc g++ cmake pkg-config libfreetype6-dev libfontconfig1-dev libxcb-xfixes0-dev libxkbcommon-dev python3 
 
-RUN useradd -m ${USER_NAME} -s /usr/bin/bash -u ${USER_UID}
+RUN bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f4 |xargs rm -rf || true' && \\
+ bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f1 |xargs userdel || true' && \\
+ useradd -m ${USER_NAME} -s /usr/bin/bash -u ${USER_UID}
 
 USER ${USER_NAME} 
 
