@@ -14,20 +14,28 @@
 # stow .bld_nvim
 
 set -x
+GH_SHORTNAME="neovim/neovim"
+. ${HOME}/.dothome/bin/bin/installers/.utils
+VERSION="$(getLatestVersion ${GH_SHORTNAME})"
 
-SRC_URL="https://github.com/neovim/neovim/archive/refs/tags/stable.tar.gz"
+URL="https://github.com/neovim/neovim/archive/refs/tags/${VERSION}.tar.gz"
+echo "Version: ${VERSION}"
+# exit 1
 WORKSPACE=$(mktemp -d)
 DIST_ID=$(cat /etc/*release|grep "^ID=" |cut -d= -f2)
 DIST_VER=$(cat /etc/*release|grep "^VERSION_ID=" |sed -e 's/"//g'  |cut -d= -f2)
 USER_UID=$(id -u)
 USER_NAME=$(id -un)
 NVIM_BUILD_DIR=${1:-${HOME}/.local}
+NVIM_RUNTIME_DIR="${HOME}/.local/share/nvim"
 
 [ -d ${NVIM_BUILD_DIR} ] || mkdir -p ${NVIM_BUILD_DIR}
+[ -d ${NVIM_RUNTIME_DIR} ] && mv ${NVIM_RUNTIME_DIR} "${NVIM_RUNTIME_DIR}_$(date +'%Y%m%d%H%M%S')"
 cd ${WORKSPACE}
 
-curl -LO ${SRC_URL}
+curl -LO ${URL}
 tar -xzf *.tar.gz
+mv neovim* neovim-source
 
 cat << EOF > Dockerfile
 FROM ${DIST_ID}:${DIST_VER}
@@ -37,9 +45,7 @@ RUN apt-get update && \
     ninja-build gettext libtool libtool-bin autoconf \
     automake cmake g++ pkg-config unzip git
 
-RUN bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f4 |xargs rm -rf || true' && \
-	bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f1 |xargs userdel || true' && \
-	useradd -m ${USER_NAME} -s /usr/bin/bash -u ${USER_UID}
+RUN useradd -m ${USER_NAME} -s /usr/bin/bash -u ${USER_UID}
 EOF
 
 DCK_HASH=$(md5sum Dockerfile)
@@ -55,7 +61,7 @@ sudo chown -R ${USER_NAME}:${USER_NAME} ${HOME/.local}
 docker run -ti --rm \
 	-u ${USER_NAME} \
 	-v ${NVIM_BUILD_DIR}:/home/${USER_NAME}/.local \
-	-v ${WORKSPACE}/neovim-stable:/home/${USER_NAME}/nvim \
+	-v ${WORKSPACE}/neovim-source:/home/${USER_NAME}/nvim \
 	-w /home/${USER_NAME}/nvim \
 	${DCK_IMG} bash -xlc \
 	'make -j4 CMAKE_BUILD_TYPE=Release CMAKE_INSTALL_PREFIX=$HOME/.local install'
