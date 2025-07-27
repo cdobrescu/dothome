@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -x
+
+while getopts "n" flag; do
+  case "${flag}" in
+    n) VERSION="nightly" ;;
+    *) echo "Usage: ./nvim [-n]" ;;
+  esac
+done
+
+GH_SHORTNAME="LuaLS/lua-language-server"
+
+. ${HOME}/.dothome/bin/bin/installers/.utils
+if [ -z "$VERSION" ]; then
+  VERSION="$(getLatestVersion ${GH_SHORTNAME})"
+fi
+KERNEL_NAME=$(uname -s)
+ARCH_NAME=$(uname -m)
+ARCH_NAME=${ARCH_NAME/aarch64/arm64}
+ARCH_NAME=${ARCH_NAME/x86_64/x64}
+OS_NAME=$(uname -o |tr '[:upper:]' '[:lower:]')
+OS_NAME=${OS_NAME/gnu\//}
+# https://github.com/LuaLS/lua-language-server/releases/download/3.15.0/lua-language-server-3.15.0-linux-x64.tar.gz
+TGZ="lua-language-server-${VERSION}-${OS_NAME}-${ARCH_NAME}.tar.gz"
+URL="https://github.com/${GH_SHORTNAME}/releases/download/${VERSION}/${TGZ}"
+DEPLOY_DIR="${HOME}/.local/share/lua_ls"
+
+
+tmp_dir=$(mktemp -d '/tmp/lua_ls-XXXXXX')
+pushd ${tmp_dir}
+curl -s -L -O ${URL} || exit 1
+tar -xzf ${TGZ} || exit 1
+rm -f ${TGZ}
+mkdir -p ${DEPLOY_DIR}
+mv * ${DEPLOY_DIR}
+popd
+rm -rf ${tmp_dir}
+
+cat << EOF > ${HOME}/.local/bin/lua-language-server
+#!/bin/bash
+exec "${DEPLOY_DIR}/bin/lua-language-server" "\$@"
+EOF
+
+chmod u+x ${HOME}/.local/bin/lua-language-server
+

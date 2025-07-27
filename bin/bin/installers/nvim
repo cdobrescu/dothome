@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+while getopts "n" flag; do
+  case "${flag}" in
+    n) VERSION="nightly" ;;
+    *) echo "Usage: ./nvim [-n]" ;;
+  esac
+done
+
+GH_SHORTNAME="neovim/neovim"
+
+. ${HOME}/.dothome/bin/bin/installers/.utils
+if [ -z "$VERSION" ]; then
+  VERSION="$(getLatestVersion ${GH_SHORTNAME})"
+fi
+KERNEL_NAME=$(uname -s)
+ARCH_NAME=$(uname -m)
+ARCH_NAME=${ARCH_NAME/aarch64/arm64}
+# https://github.com/neovim/neovim/releases/download/v0.11.3/nvim-linux-arm64.tar.gz
+TGZ="nvim-linux-${ARCH_NAME}.tar.gz"
+URL="https://github.com/${GH_SHORTNAME}/releases/download/${VERSION}/${TGZ}"
+
+tmp_dir=$(mktemp -d '/tmp/nvim-XXXXXX')
+pushd ${tmp_dir}
+curl -s -L -O ${URL} || exit 1
+tar -xzf ${TGZ} || exit 1
+unzip_dir=$(find ./ -maxdepth 1 -type d |tail -1)
+cp -r ${unzip_dir}/* ~/.local
+popd
+rm -rf ${tmp_dir}
