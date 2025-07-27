@@ -29,6 +29,7 @@ vim.o.signcolumn = 'yes'
 vim.g.mapleader = " "
 
 vim.keymap.set('n', '<leader>o', ':so $MYVIMRC<CR>')
+vim.keymap.set('n', '<leader>oe', ':e $MYVIMRC<CR>')
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
