@@ -23,16 +23,14 @@ OS_NAME=${OS_NAME/gnu\//}
 # https://github.com/LuaLS/lua-language-server/releases/download/3.15.0/lua-language-server-3.15.0-linux-x64.tar.gz
 TGZ="lua-language-server-${VERSION}-${OS_NAME}-${ARCH_NAME}.tar.gz"
 URL="https://github.com/${GH_SHORTNAME}/releases/download/${VERSION}/${TGZ}"
-DEPLOY_DIR="${HOME}/.local/share/lua_ls"
+DEPLOY_DIR="${HOME}/.local/share/lua-ls"
 
 
 tmp_dir=$(mktemp -d '/tmp/lua_ls-XXXXXX')
 pushd ${tmp_dir}
 curl -s -L -O ${URL} || exit 1
-tar -xzf ${TGZ} || exit 1
-rm -f ${TGZ}
 mkdir -p ${DEPLOY_DIR}
-mv * ${DEPLOY_DIR}
+tar -xzf ../${TGZ} -C ${DEPLOY_DIR} || exit 1
 popd
 rm -rf ${tmp_dir}
 
