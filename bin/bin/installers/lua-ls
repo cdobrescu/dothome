@@ -26,11 +26,11 @@ URL="https://github.com/${GH_SHORTNAME}/releases/download/${VERSION}/${TGZ}"
 DEPLOY_DIR="${HOME}/.local/share/lua-ls"
 
 
-tmp_dir=$(mktemp -d '/tmp/lua_ls-XXXXXX')
+tmp_dir=$(mktemp -d '/tmp/lua-ls-XXXXXX')
 pushd ${tmp_dir}
 curl -s -L -O ${URL} || exit 1
 mkdir -p ${DEPLOY_DIR}
-tar -xzf ../${TGZ} -C ${DEPLOY_DIR} || exit 1
+tar -xzf ${TGZ} -C ${DEPLOY_DIR} || exit 1
 popd
 rm -rf ${tmp_dir}
 

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -x
+
+GH_SHORTNAME="nvm-sh/nvm"
+
+. ${HOME}/.dothome/bin/bin/installers/.utils
+if [ -z "$VERSION" ]; then
+  VERSION="$(getLatestVersion ${GH_SHORTNAME})"
+fi
+NVM_DIR=${HOME}/.nvm
+
+curl -s -o- https://raw.githubusercontent.com/nvm-sh/nvm/${VERSION}/install.sh | bash
+
+. ${NVM_DIR}/nvm.sh
+nvm install --lts
+
