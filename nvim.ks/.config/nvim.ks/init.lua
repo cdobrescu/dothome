@@ -170,6 +170,10 @@ vim.keymap.set('n', '<C-n>', '<cmd>20Lex<CR>')
 --  See `:help hlsearch`
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+-- Shortcuts to VIMRC
+-- vim.keymap.set('n', '<leader>o', ':so $MYVIMRC<CR>', { desc = 'Reload vim configuration' })
+vim.keymap.set('n', '<leader>oe', ':e $MYVIMRC<CR>', { desc = 'Edit vim configuration' })
+
 -- Diagnostic keymaps
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
