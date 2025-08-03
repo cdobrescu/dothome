@@ -28,6 +28,7 @@ vim.o.signcolumn = 'yes'
 
 vim.g.mapleader = " "
 
+vim.keymap.set('n', '<C-n>', '<cmd>20Lex<CR>')
 vim.keymap.set('n', '<leader>o', ':so $MYVIMRC<CR>')
 vim.keymap.set('n', '<leader>oe', ':e $MYVIMRC<CR>')
 
@@ -50,5 +51,5 @@ vim.pack.add({
 })
 
 vim.cmd('colorscheme gruvbox')
-vim.lsp.enable({ 'lua_ls' })
+vim.lsp.enable({ 'lua_ls', 'clangd' })
 

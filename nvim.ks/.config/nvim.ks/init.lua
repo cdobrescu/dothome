@@ -85,6 +85,7 @@ P.S. You can delete this when you're done too. It's your config now! :)
 --]]
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
+vim.o.shell = 'bash'
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
