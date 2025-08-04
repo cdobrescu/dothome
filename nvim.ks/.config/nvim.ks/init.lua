@@ -163,8 +163,8 @@ vim.opt.scrolloff = 10
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
--- Clear highlights on search when pressing <Esc> in normal mode
---  See `:help hlsearch`
+vim.keymap.set('n', '<leader>/', 'gcc', {remap = true})
+vim.keymap.set('v', '<leader>/', 'gc', {remap = true})
 vim.keymap.set('n', '<C-n>', '<cmd>20Lex<CR>')
 
 -- Clear highlights on search when pressing <Esc> in normal mode
@@ -625,7 +625,7 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        -- clangd = {},
+        clangd = {},
         -- gopls = {},
         -- pyright = {},
         -- rust_analyzer = {},
