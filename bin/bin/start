@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+set -x
+
+SUFFIX=$(basename $PWD)
+PREFIX=dck
+IMG=${PREFIX}-${SUFFIX}
+USER_NAME=$(id -un)
+USER_UID=$(id -u)
+
+CUSTOM_DEPS="libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libfreetype-dev"
+
+cat << EOF > Dockerfile
+FROM ubuntu:24.04
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+# ENV PATH=${HOME}/.local/bin:${HOME}/bin:${HOME}/.nodenv/shims:${HOME}/.nodenv/bin:${HOME}/.pyenv/shims:${HOME}/.pyenv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+
+RUN apt update \\
+    && DEBIAN_FRONTEND="noninteractive" apt-get -y install \\
+    sudo locales curl git unzip less \\
+    clang clangd cmake ninja-build valgrind clang-tidy clang-format \\
+    luarocks ripgrep fd-find lldb zip stow ca-certificates gnupg \\
+    xauth fluxbox x11-apps \\
+    && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \\
+    && locale-gen
+
+RUN bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f4 |xargs rm -rf || true' && \\
+    bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f1 |xargs userdel || true' && \\
+    useradd -u ${USER_UID} -m -U -s /bin/bash ${USER_NAME} \\
+    && echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/${USER_NAME}
+    # && usermod -aG docker  ${USER_NAME}
+
+RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install \\
+    ${CUSTOM_DEPS}
+
+USER ${USER_NAME}
+
+EOF
+
+REBUILD_IMG=1
+[ -f Dockerfile.md5sum ] && {
+  md5sum -c --quiet Dockerfile.md5sum && {
+    REBUILD_IMG=0
+  }
+}
+
+
+[[ ${REBUILD_IMG} -gt 0 ]] && {
+  docker ps |grep -q ${IMG} && {
+    docker stop ${IMG}
+  }
+
+  docker images |grep -q ${IMG} && {
+    docker rmi ${IMG}
+  }
+
+  docker build --rm -t ${IMG} . && \
+    md5sum Dockerfile > Dockerfile.md5sum
+}
+
+docker run --rm -d \
+  --name ${IMG} \
+  -h ${IMG} \
+  -v ${HOME}/.config:/home/${USER_NAME}/.config \
+  -v ${HOME}/.dothome:/home/${USER_NAME}/.dothome \
+  -v ${HOME}/.local:/home/${USER_NAME}/.local \
+  -v ${HOME}/.gemini:/home/${USER_NAME}/.gemini \
+  -v ${HOME}/.pyenv:/home/${USER_NAME}/.pyenv \
+  -v ${HOME}/.nvm:/home/${USER_NAME}/.nvm \
+  -v ${HOME}/.bashrc:/home/${USER_NAME}/.bashrc \
+  -v ${HOME}/.ssh:/home/${USER_NAME}/.ssh \
+  -v ${HOME}/.gitconfig:/home/${USER_NAME}/.gitconfig \
+  -v ${PWD}/workspace:/home/${USER_NAME}/workspace \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+	--device /dev/dri:/dev/dri \
+  -e DISPLAY=$DISPLAY \
+  -w /home/${USER_NAME}/workspace \
+  ${IMG} \
+  bash -lc "sleep infinity"
+  # -p 127.0.0.1:6667:6667 \
+  #bash -lc "NVIM_APPNAME=nvim.ks ~/.local/bin/nvim --headless --listen 0.0.0.0:6667"
