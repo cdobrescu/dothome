@@ -1,0 +1,63 @@
+# Helper function to run a command with a spinner
+run_with_spinner() {
+    # Check if a command is provided
+    if [ $# -eq 0 ]; then
+        print_red "Error: No command provided."
+        return 1
+    fi
+
+    # Create a .pid file to store the PID and exit status
+    local pid_file="$(mktemp).pid"
+
+    # Run the job_wrapper function in the background
+    job_wrapper "$@" &
+    local pid=$!
+
+    # Loading animation
+    local animation=('|' '/' '-' '\\')
+    local i=0
+
+    # Save the cursor position using tput
+    tput sc
+
+    # Hide the cursor
+    tput civis
+
+    while kill -0 $pid 2>/dev/null; do
+        # Restore the cursor position and draw the animation frame
+        tput rc
+        printf "${animation[i]}"
+        i=$(( (i + 1) % 4 ))
+        sleep 0.1
+    done
+
+    # Clear the loading animation
+    tput rc
+    printf " "  # Clear the animation character
+
+    # Wait for the process to complete
+    wait $pid
+
+    # Read the exit status from the .pid file
+    local exit_status=$(tail -n 1 "$pid_file")
+
+    if [ $exit_status -eq 0 ]; then
+        tput rc
+        printf "         "  # Clear any remaining characters
+        tput rc
+        print_green "DONE"
+    else
+        tput rc
+        printf "         "  # Clear any remaining characters
+        tput rc
+        print_red "FAILED"
+    fi
+
+    # Show the cursor again
+    tput cnorm
+
+    # Clean up the .pid file
+    rm -f "$pid_file"
+
+    return $exit_status
+}

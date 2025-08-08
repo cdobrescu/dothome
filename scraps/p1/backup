@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+
+# Function to display colored output
+print_green() {
+    echo -e "\033[0;32m$1\033[0m"
+}
+
+print_red() {
+    echo -e "\033[0;31m$1\033[0m"
+}
+
+# Helper function to run a command with a spinner
+run_with_spinner() {
+    # Check if a command is provided
+    if [ $# -eq 0 ]; then
+        print_red "Error: No command provided."
+        return 1
+    fi
+
+    # Create temporary files for stdout and stderr
+    local stdout_file
+    local stderr_file
+    stdout_file=$(mktemp)
+    stderr_file=$(mktemp)
+
+    # Ensure temporary files are deleted on exit
+    trap "rm -f $stdout_file $stderr_file" EXIT
+
+    # Run the command in the background, redirecting stdout and stderr
+    "$@" >"$stdout_file" 2>"$stderr_file" &
+    local pid=$!
+
+    # Loading animation
+    local animation=('|' '/' '-' '\')
+    local i=0
+
+    # Save the cursor position using tput
+    tput sc
+
+    # Hide the cursor
+    tput civis
+
+    while kill -0 $pid 2>/dev/null; do
+        # Restore the cursor position and draw the animation frame
+        tput rc
+        printf "${animation[i]}"
+        i=$(( (i + 1) % 4 ))
+        sleep 0.3
+    done
+
+    # Clear the loading animation
+    tput rc
+    printf " "  # Clear the animation character
+
+    # Check the exit status
+    if [ -z "$exit_status" ]; then
+        exit_status=1  # Default to failure if exit_status is unset
+    fi
+
+    if [ $exit_status -eq 0 ]; then
+        tput rc
+        printf "         "  # Clear any remaining characters
+        tput rc
+        print_green "DONE"
+    else
+        tput rc
+        printf "         "  # Clear any remaining characters
+        tput rc
+        print_red "FAILED"
+        cat "$stderr_file"  # Only print stderr if the process fails
+    fi
+
+    # Show the cursor again
+    tput cnorm
+
+    # Wait for the process to complete and get its exit status
+    wait $pid
+    local exit_status=$?
+
+    # Clear the loading animation
+    printf "\r"
+
+    # Check the exit status
+    if [ $exit_status -eq 0 ]; then
+        print_green "DONE"
+    else
+        print_red "FAILED"
+        cat "$stderr_file"
+    fi
+
+    # Clean up temporary files
+    rm -f "$stdout_file" "$stderr_file"
+
+    return $exit_status
+}
