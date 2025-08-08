@@ -21,10 +21,14 @@ TGZ="nvim-linux-${ARCH_NAME}.tar.gz"
 URL="https://github.com/${GH_SHORTNAME}/releases/download/${VERSION}/${TGZ}"
 
 tmp_dir=$(mktemp -d '/tmp/nvim-XXXXXX')
-pushd ${tmp_dir}
-curl -s -L -O ${URL} || exit 1
-tar -xzf ${TGZ} || exit 1
+cd ${tmp_dir}
+printf "%-70s" "Downloading ${TGZ}"
+run_with_spinner curl -s -L -O ${URL} || exit 1
+printf "%-70s" "Unzipping ${TGZ}"
+run_with_spinner tar -xzf ${TGZ} || exit 1
 unzip_dir=$(find ./ -maxdepth 1 -type d |tail -1)
-cp -r ${unzip_dir}/* ~/.local
-popd
-rm -rf ${tmp_dir}
+printf "%-70s" "Installing"
+run_with_spinner cp -r ${unzip_dir}/* ~/.local
+cd - 2&>1 > /dev/null
+printf "%-70s" "Cleanup"
+run_with_spinner rm -rf ${tmp_dir}
