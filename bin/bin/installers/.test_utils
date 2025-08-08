@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-. utils
+. .utils
 
 echo -n "Downloading NVIM binary         "
 run_with_spinner bash -c "sleep 2"

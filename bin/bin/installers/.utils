@@ -20,9 +20,86 @@ err() {
 # specified in short form:
 # user/repo
 #
-function getLatestVersion() {
+getLatestVersion() {
 	GH_SHORTNAME=$1
 	LATEST_URL="https://github.com/${GH_SHORTNAME}/releases/latest"
 	echo "$(curl -Ls -o /dev/null -w '%{url_effective}\n' ${LATEST_URL} | awk -F/ '{print  $NF}')"
 }
 
+# Function to display colored output
+__green() {
+    echo -ne "\033[0;32m"
+		cat - </dev/stdin
+    echo -ne "\033[0m"
+}
+
+__red() {
+    echo -ne "\033[0;31m"
+		cat - </dev/stdin
+    echo -ne "\033[0m"
+}
+
+# Helper function to run a command with a spinner
+run_with_spinner() {
+    # Check if a command is provided
+    if [ $# -eq 0 ]; then
+        print_red "Error: No command provided."
+        return 1
+    fi
+
+    # Create temporary files for stdout and stderr
+    local stdout_file
+    local stderr_file
+    stdout_file=$(mktemp)
+    stderr_file=$(mktemp)
+
+    # Ensure temporary files are deleted on exit
+    trap "rm -f $stdout_file $stderr_file" EXIT
+
+    # Run the command in the background, redirecting stdout and stderr
+    "$@" >"$stdout_file" 2>"$stderr_file" &
+    local pid=$!
+
+    # Loading animation
+    local animation=('|' '/' '-' '\\')
+    local i=0
+
+    # Save the cursor position using tput
+    tput sc
+
+    # Hide the cursor
+    tput civis
+
+    while kill -0 $pid 2>/dev/null; do
+        # Restore the cursor position and draw the animation frame
+        tput rc
+        printf "${animation[i]}"
+        i=$(( (i + 1) % 4 ))
+        sleep 0.1
+    done
+
+    # Wait for the process to complete and get its exit status
+    wait $pid
+    local exit_status=$?
+
+    # Clear the loading animation and restore cursor
+    tput rc
+    printf "         "  # Clear any remaining characters
+    tput rc
+
+    # Show the cursor again
+    tput cnorm
+
+    # Check the exit status and display result
+    if [ $exit_status -eq 0 ]; then
+         echo "DONE" |__green
+    else
+         echo "FAILED" |__red
+        cat "$stderr_file" |__red
+    fi
+
+    # Clean up temporary files
+    rm -f "$stdout_file" "$stderr_file"
+
+    return $exit_status
+}
