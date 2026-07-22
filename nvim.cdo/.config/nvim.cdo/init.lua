@@ -7,10 +7,21 @@ vim.o.relativenumber = true
 vim.o.cursorline = true
 vim.o.shell = 'bash'
 vim.o.winborder = 'rounded'
+vim.o.termguicolors = true
 
 -- Configure how new splits should be opened
 vim.o.splitright = true
 vim.o.splitbelow = true
+
+-- Auto cwd when the first argument is a directory
+vim.api.nvim_create_autocmd("VimEnter", {
+  callback = function()
+    local arg = vim.fn.argv(0)
+    if arg ~= "" and vim.fn.isdirectory(arg) == 1 then
+      vim.cmd("cd " .. vim.fn.fnameescape(arg))
+    end
+  end,
+})
 
 -- Highlight when yanking (copying) text
 --  Try it with `yap` in normal mode
@@ -66,14 +77,14 @@ vim.keymap.set('t', '^[', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
 vim.pack.add({
-  { src = 'https://github.com/ellisonleao/gruvbox.nvim' },
-  { src = 'https://github.com/neovim/nvim-lspconfig' },
-  { src = 'https://github.com/nvim-treesitter/nvim-treesitter' },
+  -- { src = 'https://github.com/ellisonleao/gruvbox.nvim' },
+  -- { src = 'https://github.com/neovim/nvim-lspconfig' },
+  { src = 'https://github.com/nvim-treesitter/nvim-treesitter', version='main'},
   { src = 'https://github.com/lukas-reineke/indent-blankline.nvim' },
   -- { src = 'https://github.com/windwp/nvim-autopairs' },
 })
 
-vim.cmd('colorscheme gruvbox')
+vim.cmd('colorscheme habamax')
 vim.lsp.enable({ 'lua_ls', 'clangd' })
 require("ibl").setup()
 
