@@ -1,22 +1,18 @@
-local opt = vim.opt
+vim.o.tabstop = 2
+vim.o.softtabstop = 2
+vim.o.shiftwidth = 2
+vim.o.expandtab = true
+vim.o.number = true
+vim.o.relativenumber = true
+vim.o.cursorline = true
+vim.o.shell = 'bash'
+vim.o.winborder = 'rounded'
+vim.o.termguicolors = true
+vim.cmd('colorscheme habamax')
 
-opt.number = true
-opt.relativenumber = true
-opt.tabstop = 4
-opt.shiftwidth = 4
-opt.cursorline = true
-opt.expandtab = true
-opt.smartindent = true
-opt.wrap = false
-opt.termguicolors = true
-opt.signcolumn = "yes"
-opt.updatetime = 250
-opt.timeoutlen = 300
-opt.ignorecase = true
-opt.smartcase = true
-opt.background = "dark"
-
-vim.cmd [[colorscheme habamax]]
+-- Configure how new splits should be opened
+vim.o.splitright = true
+vim.o.splitbelow = true
 
 -- Auto cwd when the first argument is a directory
 vim.api.nvim_create_autocmd("VimEnter", {
@@ -38,4 +34,25 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.highlight.on_yank()
   end,
 })
+
+-- Sets how neovim will display certain whitespace characters in the editor.
+--  See `:help 'list'`
+--  and `:help 'listchars'`
+--
+--  Notice listchars is set using `vim.opt` instead of `vim.o`.
+--  It is very similar to `vim.o` but offers an interface for conveniently interacting with tables.
+--   See `:help lua-options`
+--   and `:help lua-options-guide`
+vim.o.list = true
+vim.opt.listchars = {
+	tab = '» ',
+	trail = '·',
+	nbsp = '␣'
+}
+
+-- Minimal number of screen lines to keep above and below the cursor.
+vim.o.scrolloff = 5
+
+-- Keep signcolumn on by default
+vim.o.signcolumn = 'yes'
 
