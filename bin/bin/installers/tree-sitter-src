@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -x
+
+while getopts "n" flag; do
+  case "${flag}" in
+    n) VERSION="nightly" ;;
+    *) echo "Usage: ./nvim [-n]" ;;
+  esac
+done
+
+# https://github.com/tree-sitter/tree-sitter/releases/download/v0.26.8/tree-sitter-cli-linux-arm64.zip
+# https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v0.26.11.tar.gz
+GH_SHORTNAME="tree-sitter/tree-sitter"
+
+. ${HOME}/.dothome/bin/bin/installers/.utils
+if [ -z "$VERSION" ]; then
+  VERSION="$(getLatestVersion ${GH_SHORTNAME})"
+fi
+KERNEL_NAME=$(uname -s)
+ARCH_NAME=$(uname -m)
+ARCH_NAME=${ARCH_NAME/aarch64/arm64}
+# https://github.com/neovim/neovim/releases/download/v0.11.3/nvim-linux-arm64.tar.gz
+TGZ="${VERSION}.tar.gz"
+URL="https://github.com/${GH_SHORTNAME}/archive/refs/tags/${TGZ}"
+
+tmp_dir=$(mktemp -d '/tmp/tree-sitter-XXXXXX')
+cd ${tmp_dir}
+printf "%-70s" "Downloading ${TGZ}"
+run_with_spinner curl -s -L -O ${URL} || exit 1
+printf "%-70s" "Unzipping ${TGZ}"
+run_with_spinner tar -xzf ${TGZ} || exit 1
+SRC_DIR=$(find . -maxdepth 1 -type d| tail -1 | cut -d/  -f2)
+
+
+DIST_ID=$(cat /etc/*release|grep "^ID=" |cut -d= -f2)
+DIST_VER=$(cat /etc/*release|grep "^VERSION_ID=" |sed -e 's/"//g'  |cut -d= -f2)
+USER_UID=$(id -u)
+USER_NAME=$(id -un)
+BUILD_DIR=${1:-${HOME}/.local}
+
+cat << EOF > Dockerfile
+FROM ${DIST_ID}:${DIST_VER}
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND="noninteractive" apt-get install -y \
+    curl build-essential libclang-dev
+
+
+RUN bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f4 |xargs rm -rf || true' && \
+	bash -c 'cat /etc/passwd |cut -d: -f1,3,4,6 | grep  "${USER_UID}:${USER_UID}"| cut -d: -f1 |xargs userdel || true' && \
+	useradd -m ${USER_NAME} -s /usr/bin/bash -u ${USER_UID}
+
+USER ${USER_NAME}
+RUN bash -lc "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+EOF
+
+DCK_HASH=$(md5sum Dockerfile)
+DCK_TAG=${DCK_HASH::8}
+DCK_IMG="tree-sitter-dev:${DCK_TAG}" 
+
+docker image inspect ${DCK_IMG} &> /dev/null || \
+        docker build --rm -t ${DCK_IMG} -f Dockerfile .
+
+ls ${BUILD_DIR} &>/dev/null || mkdir -p ${BUILD_DIR}
+# docker run -ti --rm \
+docker run -ti --rm \
+	-u ${USER_NAME} \
+	-v ${BUILD_DIR}:/home/${USER_NAME}/.local \
+	-v ${tmp_dir}/${SRC_DIR}:/home/${USER_NAME}/src \
+	-w /home/${USER_NAME}/src \
+	${DCK_IMG} bash -xlc \
+  "cargo install --root $HOME/.local --locked tree-sitter-cli"
+  #"sleep infinity"
+	#"sh autogen.sh && ./configure --prefix=$HOME/.local && make && make install"
+set +x
+exit
+printf "%-70s" "Installing"
+run_with_spinner cp -r tree-sitter ~/.local/bin || exit 1
+cd - 2&>1 > /dev/null
+printf "%-70s" "Cleanup"
+run_with_spinner rm -rf ${tmp_dir}
